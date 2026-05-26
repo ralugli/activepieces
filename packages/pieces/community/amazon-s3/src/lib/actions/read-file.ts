@@ -1,10 +1,9 @@
 import { Property, createAction } from '@activepieces/pieces-framework';
-import { S3 } from '@aws-sdk/client-s3';
-import { amazonS3Auth } from '../auth';
-import { createS3 } from '../common';
+import { amazonS3CombinedAuth, AccessKeyAuthProps, OidcAuthProps } from '../auth';
+import { createS3, createS3WithAssumeRole } from '../common';
 
 export const readFile = createAction({
-  auth: amazonS3Auth,
+  auth: amazonS3CombinedAuth,
   name: 'read-file',
   displayName: 'Read File',
   description: 'Read a file from S3 to use it in other steps',
@@ -16,9 +15,12 @@ export const readFile = createAction({
     }),
   },
   async run(context) {
-    const { bucket } = context.auth.props;
+    const authProps = context.auth.props as AccessKeyAuthProps | OidcAuthProps;
+    const { bucket } = authProps;
     const { key } = context.propsValue;
-    const s3 = createS3(context.auth.props);
+    const s3 = 'roleArn' in authProps
+      ? await createS3WithAssumeRole({ auth: authProps, server: context.server })
+      : createS3(authProps);
 
     const file = await s3.getObject({
       Bucket: bucket,
