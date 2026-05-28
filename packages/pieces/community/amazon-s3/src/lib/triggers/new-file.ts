@@ -1,11 +1,11 @@
-import { Property, ServerContext, createTrigger } from '@activepieces/pieces-framework';
+import { Property, createTrigger } from '@activepieces/pieces-framework';
 import { TriggerStrategy } from '@activepieces/pieces-framework';
 import { ListObjectsV2CommandInput } from '@aws-sdk/client-s3';
 import { MarkdownVariant } from '@activepieces/shared';
 import { S3 } from '@aws-sdk/client-s3';
 import dayjs from 'dayjs';
 import { amazonS3CombinedAuth, AccessKeyAuthProps, OidcAuthProps } from '../auth';
-import { createS3, createS3WithAssumeRole } from '../common';
+import { resolveS3Client } from '../common';
 
 export const newFile = createTrigger({
   auth: amazonS3CombinedAuth,
@@ -99,14 +99,3 @@ async function fetchS3FilesForTrigger({
   }));
 }
 
-async function resolveS3Client({
-  authProps,
-  server,
-}: {
-  authProps: AccessKeyAuthProps | OidcAuthProps;
-  server: ServerContext;
-}): Promise<S3> {
-  return 'roleArn' in authProps
-    ? createS3WithAssumeRole({ auth: authProps, server })
-    : createS3(authProps);
-}

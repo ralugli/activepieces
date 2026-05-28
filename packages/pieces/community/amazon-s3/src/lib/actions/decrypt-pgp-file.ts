@@ -3,7 +3,7 @@ import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-sec
 import { S3 } from '@aws-sdk/client-s3';
 import * as openpgp from 'openpgp';
 import { amazonS3CombinedAuth, AccessKeyAuthProps, OidcAuthProps } from '../auth';
-import { createS3, getTemporaryCredentials } from '../common';
+import { createS3, createSecretsManagerClient, getTemporaryCredentials } from '../common';
 
 export const decryptPgpFile = createAction({
   auth: amazonS3CombinedAuth,
@@ -58,17 +58,9 @@ export const decryptPgpFile = createAction({
       secretsClient = new SecretsManagerClient({ credentials, region: secretsManagerRegion || oidcProps.region });
     } else {
       const accessKeyProps = authProps as AccessKeyAuthProps;
-      if (!accessKeyProps.accessKeyId || !accessKeyProps.secretAccessKey) {
-        throw new Error('Access Key ID and Secret Access Key are required');
-      }
+      const smAuth = secretsManagerRegion ? { ...accessKeyProps, region: secretsManagerRegion } : accessKeyProps;
       s3 = createS3(accessKeyProps);
-      secretsClient = new SecretsManagerClient({
-        credentials: {
-          accessKeyId: accessKeyProps.accessKeyId,
-          secretAccessKey: accessKeyProps.secretAccessKey,
-        },
-        region: secretsManagerRegion || accessKeyProps.region,
-      });
+      secretsClient = createSecretsManagerClient(smAuth);
     }
 
     // Download the encrypted file from S3

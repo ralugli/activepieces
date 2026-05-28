@@ -67,6 +67,18 @@ export async function createSecretsManagerWithAssumeRole({
   });
 }
 
+export async function resolveS3Client({
+  authProps,
+  server,
+}: {
+  authProps: AccessKeyAuthProps | OidcAuthProps;
+  server: ServerContext;
+}): Promise<S3> {
+  return 'roleArn' in authProps
+    ? createS3WithAssumeRole({ auth: authProps, server })
+    : createS3(authProps);
+}
+
 export async function getTemporaryCredentials({
   auth,
   server,

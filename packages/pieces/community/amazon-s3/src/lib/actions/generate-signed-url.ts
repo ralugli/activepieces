@@ -1,8 +1,8 @@
 import { Property, ServerContext, createAction } from '@activepieces/pieces-framework';
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { amazonS3CombinedAuth, AccessKeyAuthProps, OidcAuthProps } from '../auth';
-import { createS3WithAssumeRole } from '../common';
+import { createS3, createS3WithAssumeRole } from '../common';
 
 export const generateSignedUrl = createAction({
   auth: amazonS3CombinedAuth,
@@ -59,17 +59,7 @@ function createPresignedUrlWithClient({
   key: string;
   expiresIn: number;
 }) {
-  if (!auth.accessKeyId || !auth.secretAccessKey) {
-    throw new Error('Access Key ID and Secret Access Key are required');
-  }
-  const client = new S3Client({
-    region: auth.region,
-    credentials: {
-      accessKeyId: auth.accessKeyId,
-      secretAccessKey: auth.secretAccessKey,
-    },
-  });
-
+  const s3 = createS3(auth);
   const command = new GetObjectCommand({ Bucket: auth.bucket, Key: key });
-  return getSignedUrl(client, command, { expiresIn: expiresIn * 60 });
+  return getSignedUrl(s3, command, { expiresIn: expiresIn * 60 });
 }

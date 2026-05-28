@@ -1,6 +1,6 @@
 import { Property, createAction } from '@activepieces/pieces-framework';
 import { amazonS3CombinedAuth, AccessKeyAuthProps, OidcAuthProps } from '../auth';
-import { createS3, createS3WithAssumeRole } from '../common';
+import { resolveS3Client } from '../common';
 import { ObjectCannedACL } from '@aws-sdk/client-s3';
 import mime from 'mime-types';
 
@@ -68,9 +68,7 @@ export const amazons3UploadFile = createAction({
     const { bucket } = authProps;
     const { file, fileName, acl, type } = context.propsValue;
 
-    const s3 = 'roleArn' in authProps
-      ? await createS3WithAssumeRole({ auth: authProps, server: context.server })
-      : createS3(authProps);
+    const s3 = await resolveS3Client({ authProps, server: context.server });
 
     let contentType, extension = null
 

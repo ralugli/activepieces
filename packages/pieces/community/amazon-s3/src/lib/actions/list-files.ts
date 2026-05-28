@@ -1,6 +1,6 @@
 import { Property, createAction } from '@activepieces/pieces-framework';
 import { amazonS3CombinedAuth, AccessKeyAuthProps, OidcAuthProps } from '../auth';
-import { createS3, createS3WithAssumeRole } from '../common';
+import { resolveS3Client } from '../common';
 import { ListObjectsV2CommandInput } from '@aws-sdk/client-s3';
 
 interface S3File {
@@ -38,9 +38,7 @@ export const listFiles = createAction({
   },
   async run(context) {
     const authProps = context.auth.props as AccessKeyAuthProps | OidcAuthProps;
-    const s3 = 'roleArn' in authProps
-      ? await createS3WithAssumeRole({ auth: authProps, server: context.server })
-      : createS3(authProps);
+    const s3 = await resolveS3Client({ authProps, server: context.server });
 
     const params: ListObjectsV2CommandInput = {
       Bucket: authProps.bucket,

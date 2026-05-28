@@ -1,6 +1,6 @@
 import { Property, createAction } from '@activepieces/pieces-framework';
 import { amazonS3CombinedAuth, AccessKeyAuthProps, OidcAuthProps } from '../auth';
-import { createS3, createS3WithAssumeRole } from '../common';
+import { resolveS3Client } from '../common';
 
 export const deleteFile = createAction({
   auth: amazonS3CombinedAuth,
@@ -19,9 +19,7 @@ export const deleteFile = createAction({
     const { bucket } = authProps;
     const { key } = context.propsValue;
 
-    const s3 = 'roleArn' in authProps
-      ? await createS3WithAssumeRole({ auth: authProps, server: context.server })
-      : createS3(authProps);
+    const s3 = await resolveS3Client({ authProps, server: context.server });
 
     const response = await s3.deleteObject({
       Bucket: bucket,
