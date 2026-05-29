@@ -90,6 +90,7 @@ export async function getTemporaryCredentials({
     throw new Error('Role ARN is required for IAM Role authentication');
   }
   const response = await fetch(`${server.apiUrl}v1/worker/oidc-token`, {
+    method: 'POST',
     headers: { Authorization: `Bearer ${server.token}` },
   });
   if (!response.ok) {
