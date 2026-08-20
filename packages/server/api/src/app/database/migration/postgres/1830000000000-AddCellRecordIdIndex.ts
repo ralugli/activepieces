@@ -18,6 +18,14 @@ export class AddCellRecordIdIndex1830000000000 implements Migration {
             `)
         }
         else {
+            const invalidIndexes = await queryRunner.query(`
+                SELECT 1 FROM pg_class c
+                JOIN pg_index i ON i.indexrelid = c.oid
+                WHERE c.relname = 'idx_cell_record_id' AND NOT i.indisvalid
+            `)
+            if (invalidIndexes.length > 0) {
+                await queryRunner.query('DROP INDEX CONCURRENTLY IF EXISTS "idx_cell_record_id"')
+            }
             await queryRunner.query(`
                 CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_cell_record_id"
                 ON "cell" ("recordId")

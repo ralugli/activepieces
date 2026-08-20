@@ -30,6 +30,7 @@ A built-in relational database inside Activepieces: users store structured data 
 - Concurrent field reorders are last-write-wins, same as rename — no distributed lock. Reordering *existing* fields through project-release apply is not supported: `FieldState` carries no position, so array order only applies to newly created fields.
 - The web client stores positional `cell.fieldIndex` references, so it must remap every record's cells when fields move.
 - `cell` FKs cascade from `record`, `field` and `project`, so any delete on those parents needs a leading-column index on the matching `cell` column or Postgres seq-scans `cell` once per deleted row. `idx_cell_project_id_field_id_record_id_unique` does **not** serve the record cascade (`recordId` is its 3rd column) — a production `DELETE FROM "record"` built a 15-session lock convoy off that seq scan until `idx_cell_record_id` was added. Same trap applies to any new cascading child table.
+- A `CREATE INDEX CONCURRENTLY` that gets interrupted leaves an **invalid** index behind, and `IF NOT EXISTS` then skips rebuilding it — the migration is recorded as applied while the planner still ignores the index. Any concurrent-index migration must check `pg_index.indisvalid` and `DROP INDEX CONCURRENTLY` first.
 
 ### Key files
 Entry point: `tablesModule`, registered in `packages/server/api/src/app/app.ts` and mounting the three controllers under `/v1/tables`, `/v1/fields`, `/v1/records`.
